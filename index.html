@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kynay OS by Farhan Kertadiwangsa</title>
+    <style>
+        /* CSS Reset & Global Style */
+        :root {
+            --taskbar-height: 48px;
+            --start-menu-width: 520px;
+            --start-menu-height: 540px;
+            --control-center-width: 320px;
+            --accent-color-primary: #0078d4;
+            --accent-color-secondary: #4a90e2;
+            --font-color-light: #ffffff;
+            --font-color-dark: #1f1f1f;
+            --border-radius: 12px;
+            --shadow-light: 0 8px 32px rgba(0, 0, 0, 0.3);
+            --shadow-heavy: 0 12px 40px rgba(0, 0, 0, 0.4);
+            --animation-speed: 0.25s;
+
+            /* --- Base Theme (Dark) --- */
+            --bg-primary: rgba(30, 30, 30, 0.6);
+            --bg-secondary: rgba(45, 45, 45, 0.7);
+            --bg-tertiary: rgba(60, 60, 60, 0.8);
+            --border-color: rgba(255, 255, 255, 0.15);
+            --font-color: var(--font-color-light);
+            --icon-color: var(--font-color-light);
+            --icon-hover-bg: rgba(255, 255, 255, 0.1);
+            --item-hover-bg: rgba(255, 255, 255, 0.08);
+            --active-indicator: var(--accent-color-primary);
+        }
+
+        body.light-mode {
+            /* --- Light Theme Variables --- */
+            --bg-primary: rgba(242, 242, 242, 0.65);
+            --bg-secondary: rgba(255, 255, 255, 0.75);
+            --bg-tertiary: rgba(230, 230, 230, 0.85);
+            --border-color: rgba(0, 0, 0, 0.1);
+            --font-color: var(--font-color-dark);
+            --icon-color: #444444;
+            --icon-hover-bg: rgba(0, 0, 0, 0.08);
+            --item-hover-bg: rgba(0, 0, 0, 0.05);
+            --active-indicator: var(--accent-color-secondary);
+        }
+
+        * {
+            margin: 0; padding: 0; box-sizing: border-box; user-select: none;
+        }
+
+        html, body {
+            height: 100%; width: 100%; overflow: hidden;
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Roboto', 'Helvetica Neue', sans-serif;
+            color: var(--font-color); background-color: #000;
+        }
+
+        /* --- Upgraded Boot Screen --- */
+        #boot-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: #0d1117; z-index: 10000;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            transition: opacity 1.5s ease-out, visibility 1.5s ease-out;
+            visibility: visible; opacity: 1;
+        }
+        .boot-container { text-align: center; animation: fadeIn 2s ease-in-out; }
+        .boot-logo-bolt {
+            font-size: 80px; line-height: 1; color: #4a90e2;
+            text-shadow: 0 0 15px #4a90e2, 0 0 30px #4a90e2;
+            animation: pulseBolt 2.5s infinite ease-in-out; margin-bottom: 25px;
+        }
+        #boot-screen h1 { font-weight: 600; font-size: 2.5em; letter-spacing: 2px; color: #fff; margin-bottom: 8px; }
+        #boot-screen p { font-weight: 300; font-size: 1.1em; color: #ccc; }
+        #boot-screen .creator-name { font-weight: 500; color: #fff; margin-top: 4px; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes pulseBolt { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.05); opacity: 0.9; } }
+        
+        /* --- Desktop & Wallpaper --- */
+        #desktop { width: 100%; height: 100%; position: relative; overflow: hidden; }
+        #desktop-icons { position: absolute; top: 20px; left: 20px; display: grid; grid-template-columns: 90px; grid-auto-rows: 90px; gap: 10px; }
+        .desktop-icon { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; cursor: pointer; padding: 10px; border-radius: var(--border-radius); transition: background-color 0.2s ease, transform 0.2s ease; text-align: center; }
+        .desktop-icon:hover { background-color: var(--item-hover-bg); transform: translateY(-3px); }
+        .desktop-icon i { font-size: 36px; }
+        .desktop-icon span { font-size: 13px; text-shadow: 1px 1px 3px rgba(0,0,0,0.5); color: var(--font-color-light); }
+        .desktop-icon:active { transform: scale(0.95); }
+
+        /* --- Floating Taskbar --- */
+        #taskbar {
+            position: fixed; bottom: 10px; left: 50%; transform: translateX(-50%);
+            width: auto; height: var(--taskbar-height); background: var(--bg-primary);
+            backdrop-filter: blur(25px) saturate(180%); -webkit-backdrop-filter: blur(25px) saturate(180%);
+            border: 1px solid var(--border-color); z-index: 5000;
+            display: flex; align-items: center; padding: 0 8px; border-radius: 16px; box-shadow: var(--shadow-heavy);
+        }
+        #start-button {
+            width: 48px; height: 100%; display: flex; justify-content: center; align-items: center; font-size: 24px;
+            cursor: pointer; border-radius: var(--border-radius); color: var(--accent-color-secondary); transition: all 0.2s ease;
+        }
+        #start-button:hover { background-color: var(--icon-hover-bg); transform: scale(1.1); }
+        #taskbar-apps { display: flex; height: 100%; align-items: center; gap: 5px; margin: 0 10px; }
+        .taskbar-app-icon { font-size: 22px; padding: 8px; border-radius: 8px; cursor: pointer; color: var(--icon-color); transition: background-color 0.2s ease, transform 0.2s ease, color 0.2s ease; position: relative; }
+        .taskbar-app-icon.active::after { content: ''; position: absolute; bottom: 2px; left: 50%; transform: translateX(-50%); width: 6px; height: 6px; background-color: var(--active-indicator); border-radius: 50%; }
+        .taskbar-app-icon:not(.active):hover { background-color: var(--icon-hover-bg); transform: translateY(-2px); }
+        #system-tray { display: flex; align-items: center; height: 100%; padding: 0 5px; gap: 5px; border-left: 1px solid var(--border-color); margin-left: 5px; }
+        .system-tray-icon { font-size: 18px; color: var(--icon-color); padding: 8px; border-radius: 8px; cursor: pointer; transition: background-color 0.2s ease, transform 0.2s ease; }
+        .system-tray-icon:hover { background-color: var(--icon-hover-bg); transform: scale(1.1); }
+        #clock { font-size: 13px; text-align: right; padding: 0 10px; cursor: default; }
+        
+        /* --- Upgraded Start Menu --- */
+        #start-menu {
+            position: fixed; bottom: calc(var(--taskbar-height) + 20px); left: 50%; transform: translateX(-50%) translateY(30px) scale(0.95);
+            width: var(--start-menu-width); height: var(--start-menu-height); background: var(--bg-secondary);
+            backdrop-filter: blur(30px) saturate(180%); -webkit-backdrop-filter: blur(30px) saturate(180%);
+            border: 1px solid var(--border-color); border-radius: var(--border-radius); box-shadow: var(--shadow-heavy); z-index: 4999;
+            visibility: hidden; opacity: 0; transform-origin: bottom center;
+            transition: opacity var(--animation-speed) ease, transform var(--animation-speed) ease, visibility var(--animation-speed);
+            display: flex; flex-direction: column; padding: 25px;
+        }
+        #start-menu.show { visibility: visible; opacity: 1; transform: translateX(-50%) translateY(0) scale(1.0); }
+        #start-menu h2 { font-weight: 600; margin-bottom: 20px; font-size: 1.2em; }
+        .start-menu-items { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 15px; overflow-y: auto; padding-right: 10px; }
+        .start-menu-item { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 15px 10px; cursor: pointer; border-radius: var(--border-radius); transition: background-color 0.2s ease, transform 0.2s ease; }
+        .start-menu-item:hover { background-color: var(--item-hover-bg); transform: scale(1.05); }
+        .start-menu-item i { font-size: 28px; color: var(--accent-color-primary); width: 30px; text-align: center; }
+        
+        /* --- Upgraded Window Styling (macOS style) --- */
+        .window {
+            position: absolute; background-color: var(--bg-primary); backdrop-filter: blur(25px) saturate(150%);
+            border: 1px solid var(--border-color); border-radius: var(--border-radius); box-shadow: var(--shadow-light);
+            min-width: 320px; min-height: 220px; display: flex; flex-direction: column; resize: both; overflow: hidden;
+            animation: openWindow var(--animation-speed) cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            max-width: 100vw; max-height: calc(100vh - var(--taskbar-height) - 20px);
+        }
+        .window.closing { animation: closeWindow var(--animation-speed) ease-in-out forwards; }
+        @keyframes openWindow { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+        @keyframes closeWindow { from { opacity: 1; transform: scale(1); } to { opacity: 0; transform: scale(0.95); } }
+        .window-header { height: 38px; cursor: move; display: flex; align-items: center; padding: 0 5px 0 15px; flex-shrink: 0; border-bottom: 1px solid var(--border-color); }
+        .window-title { font-weight: 600; flex-grow: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .window-controls { display: flex; gap: 8px; margin-left: auto; }
+        .window-control { width: 14px; height: 14px; border-radius: 50%; cursor: pointer; transition: transform 0.2s ease; border: 1px solid rgba(0,0,0,0.1); }
+        .window-control:hover { transform: scale(1.1); }
+        #close-btn { background-color: #ff5f57; }
+        #minimize-btn { background-color: #ffbd2e; }
+        #maximize-btn { background-color: #28c940; }
+        .window-body { flex-grow: 1; overflow: auto; background-color: rgba(0,0,0,0.1); }
+        
+        /* --- Notification & Control Center --- */
+        #notification-container { position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
+        .notification { width: 320px; padding: 15px; background: var(--bg-tertiary); backdrop-filter: blur(20px) saturate(180%); border: 1px solid var(--border-color); border-radius: var(--border-radius); box-shadow: var(--shadow-light); animation: slideInNotification 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards; opacity: 0; }
+        @keyframes slideInNotification { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        #control-center { position: fixed; bottom: calc(var(--taskbar-height) + 20px); right: 20px; width: var(--control-center-width); background: var(--bg-secondary); backdrop-filter: blur(30px) saturate(180%); border: 1px solid var(--border-color); border-radius: var(--border-radius); box-shadow: var(--shadow-heavy); z-index: 4999; padding: 20px; visibility: hidden; opacity: 0; transform-origin: bottom right; transition: all var(--animation-speed) ease; transform: translateY(20px) scale(0.95); }
+        #control-center.show { visibility: visible; opacity: 1; transform: translateY(0) scale(1); }
+        .control-group { margin-bottom: 20px; } .control-group h4 { font-weight: 600; margin-bottom: 12px; }
+        .control-slider { display: flex; align-items: center; gap: 10px; }
+        .control-slider input[type="range"] { -webkit-appearance: none; appearance: none; width: 100%; height: 6px; background: rgba(120, 120, 120, 0.3); border-radius: 3px; cursor: pointer; }
+        .control-slider input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 18px; height: 18px; border-radius: 50%; background: var(--font-color); border: 3px solid var(--bg-secondary); }
+        .control-buttons { display: flex; justify-content: space-around; gap: 10px; }
+        .control-buttons .control-btn { flex-grow: 1; padding: 10px; border-radius: 8px; background: var(--item-hover-bg); border: none; color: var(--font-color); font-size: 1.5em; cursor: pointer; transition: background-color 0.2s; }
+        .control-buttons .control-btn.active { background: var(--accent-color-primary); color: #fff; }
+        
+        /* --- App Specific Styles (Upgraded & Integrated) --- */
+        body.light-mode .window-body { background-color: rgba(255,255,255,0.4); }
+        body.light-mode .app-content.notepad textarea, body.light-mode .app-content.word-editor .word-editor-content, body.light-mode .app-content.terminal { color: var(--font-color-dark); }
+        body.light-mode .app-content.terminal { background-color: rgba(255,255,255,0.6); }
+        body.light-mode .terminal-prompt { color: #555; }
+        body.light-mode .terminal-input { color: #111; caret-color: #111; }
+        body.light-mode .browser-nav input { background-color: rgba(0,0,0,0.1); border-color: rgba(0,0,0,0.2); color: var(--font-color-dark); }
+        body.light-mode .calc-button { background: rgba(0,0,0,0.05); color: var(--font-color-dark); }
+        body.light-mode .task-list li { background-color: rgba(0,0,0,0.05); }
+        body.light-mode .word-editor-toolbar button, body.light-mode .spreadsheet-controls button, body.light-mode .chatbot-send-btn { color: var(--font-color-dark); background-color: rgba(0,0,0,0.05);}
+        body.light-mode .explorer-item { background-color: rgba(0,0,0,0.02); border: 1px solid rgba(0,0,0,0.05); }
+        body.light-mode .explorer-item:hover, body.light-mode .control-buttons .control-btn:hover { background-color: rgba(0,0,0,0.08); }
+        body.light-mode .explorer-item span, body.light-mode .spreadsheet-table td, body.light-mode .spreadsheet-table th { color: var(--font-color-dark); }
+        body.light-mode .spreadsheet-table, body.light-mode .spreadsheet-table td, body.light-mode .spreadsheet-table th { border-color: rgba(0,0,0,0.1); }
+        body.light-mode .chatbot-input { background-color: rgba(0,0,0,0.1); color: var(--font-color-dark); border-color: rgba(0,0,0,0.2); }
+        body.light-mode .chatbot-message.ai { background-color: rgba(0,0,0,0.1); }
+
+        .app-content.notepad textarea { width: 100%; height: 100%; border: none; background: transparent; color: var(--font-color); font-family: 'Consolas', monospace; font-size: 14px; resize: none; outline: none; padding: 5px; }
+        .app-content.browser { display: flex; flex-direction: column; height: 100%; padding: 0;}
+        .browser-nav { display: flex; gap: 5px; margin-bottom: 5px; flex-shrink: 0; padding: 5px;}
+        .browser-nav input { flex-grow: 1; background-color: rgba(0,0,0,0.3); border: 1px solid var(--border-color); color: var(--font-color); padding: 8px 12px; border-radius: 8px; outline: none; font-size: 14px; }
+        .browser-nav button { background-color: var(--accent-color-primary); border: none; color: white; padding: 8px 15px; border-radius: 8px; cursor: pointer; transition: background-color 0.2s ease, transform 0.2s ease; }
+        .browser-content { flex-grow: 1; border: none; background-color: white; border-radius: 0 0 var(--border-radius) var(--border-radius); }
+        .app-content.terminal { background-color: rgba(0,0,0,0.6); font-family: 'Consolas', monospace; font-size: 14px; line-height: 1.5; height: 100%; padding: 10px; color: #7cfc00; overflow-y: auto;}
+        .terminal-output { height: calc(100% - 30px); overflow-y: auto; }
+        .terminal-input-line { display: flex; } .terminal-prompt { white-space: pre; color: #aaa; }
+        .terminal-input { flex-grow: 1; background: transparent; border: none; color: #7cfc00; font-family: inherit; font-size: inherit; outline: none; caret-color: #7cfc00; }
+        .app-content.about { text-align: center; padding: 20px; } .app-content.about h3 { color: var(--accent-color-primary); margin-bottom: 10px; }
+        .app-content.calculator { display: flex; flex-direction: column; gap: 10px; height: 100%; padding: 5px; }
+        .calc-display { background: rgba(0,0,0,0.2); border-radius: 8px; padding: 15px; text-align: right; font-size: 2.2em; font-weight: 300; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-bottom: 5px; }
+        .calc-buttons { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; flex-grow: 1;}
+        .calc-button { background: rgba(255,255,255,0.1); border: none; color: white; font-size: 1.3em; border-radius: 8px; cursor: pointer; transition: all 0.2s; }
+        .calc-button.operator { background: var(--accent-color-primary); }
+        .word-editor-toolbar, .spreadsheet-controls { padding: 8px; background-color: rgba(0,0,0,0.15); border-bottom: 1px solid var(--border-color); flex-shrink: 0; display: flex; gap: 5px; flex-wrap: wrap;}
+        .word-editor-toolbar button, .spreadsheet-controls button { background-color: rgba(255,255,255,0.1); border:none; color:white; padding: 8px 12px; border-radius: 6px; cursor:pointer;}
+        .word-editor-content { flex-grow: 1; overflow-y: auto; padding: 15px; outline:none; line-height: 1.6; }
+        .spreadsheet-container { flex-grow: 1; overflow: auto; }
+        .spreadsheet-table { border-collapse: collapse; width: 100%; min-width: max-content; }
+        .spreadsheet-table th, .spreadsheet-table td { border: 1px solid var(--border-color); padding: 8px; min-width: 80px; text-align: left; outline: none; }
+        .spreadsheet-table th { background-color: rgba(255,255,255,0.1); }
+        .spreadsheet-table td[contenteditable=true]:focus { box-shadow: inset 0 0 0 2px var(--accent-color-primary); }
+        .explorer-path { padding: 10px; background-color: rgba(0,0,0,0.2); border-bottom: 1px solid var(--border-color); display: flex; align-items: center; gap: 5px; }
+        .file-explorer-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 15px; align-content: start; flex-grow:1; overflow-y: auto; padding: 15px;}
+        .explorer-item { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 10px; border-radius: var(--border-radius); transition: all 0.2s ease; cursor: pointer; text-align: center; }
+        .explorer-item:hover { background-color: var(--item-hover-bg); transform: translateY(-3px); }
+        .explorer-item i { font-size: 40px; } .explorer-item span { font-size: 0.85em; word-break: break-all; }
+        .explorer-item.folder i { color: #f7b529; } .explorer-item.text i { color: #1abc9c; }
+        .task-list { list-style: none; padding: 0; flex-grow: 1; overflow-y: auto; }
+        .task-list li { display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; margin-bottom: 8px; background-color: var(--item-hover-bg); border-radius: 8px; }
+        .task-list li button { background-color: #e94b35; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; }
+        .chatbot-messages { flex-grow: 1; overflow-y: auto; padding: 10px; }
+        .chatbot-message { margin-bottom: 10px; padding: 8px 12px; border-radius: 15px; max-width: 80%; }
+        .chatbot-message.user { background-color: var(--accent-color-primary); align-self: flex-end; margin-left: auto; color: white; }
+        .chatbot-message.ai { background-color: var(--bg-tertiary); align-self: flex-start; margin-right: auto; }
+        .chatbot-input-area { display: flex; padding: 10px; border-top: 1px solid var(--border-color);}
+        .chatbot-input { flex-grow: 1; padding: 8px; border-radius: 20px; border: 1px solid var(--border-color); background-color: rgba(0,0,0,0.3); color: var(--font-color); outline: none;}
+        .chatbot-send-btn { margin-left: 10px; background-color: var(--accent-color-primary); border: none; border-radius: 50%; width: 40px; height: 40px; display: flex; justify-content: center; align-items: center; cursor: pointer; color: white;}
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+</head>
+<body class="dark-mode">
+
+    <div id="boot-screen">
+        <div class="boot-container">
+            <div class="boot-logo-bolt"><i class="fa-solid fa-bolt"></i></div>
+            <h1>Welcome to Kynay OS</h1>
+            <p>Dipersembahkan oleh</p>
+            <p class="creator-name">Farhan Kertadiwangsa</p>
+        </div>
+    </div>
+
+    <div id="desktop">
+        <div id="desktop-icons">
+             <div class="desktop-icon" data-app="file-explorer" title="FileSaya"><i class="fa-solid fa-folder" style="color: #f7b529;"></i><span>FileSaya</span></div>
+            <div class="desktop-icon" data-app="browser" title="Browser"><i class="fa-solid fa-globe" style="color: #3b88c3;"></i><span>Browser</span></div>
+            <div class="desktop-icon" data-app="word-editor" title="Kynay Write"><i class="fa-solid fa-file-word" style="color: #2a569a;"></i><span>Write</span></div>
+            <div class="desktop-icon" data-app="terminal" title="Terminal"><i class="fa-solid fa-terminal" style="color: #7cfc00;"></i><span>Terminal</span></div>
+            <div class="desktop-icon" data-app="about" title="Tentang Kynay OS"><i class="fa-solid fa-circle-info" style="color: #1abc9c;"></i><span>Tentang</span></div>
+        </div>
+    </div>
+    
+    <div id="taskbar">
+        <div id="start-button" title="Start Menu"><i class="fa-solid fa-bolt"></i></div>
+        <div id="taskbar-apps"></div>
+        <div id="system-tray">
+            <div id="clock"></div>
+            <i class="fas fa-sliders system-tray-icon" id="control-center-btn" title="Control Center"></i>
+            <i class="fas fa-power-off system-tray-icon" id="shutdown-btn" title="Shutdown"></i>
+        </div>
+    </div>
+    
+    <div id="start-menu">
+        <h2>Aplikasi</h2>
+        <div class="start-menu-items">
+            <div class="start-menu-item" data-app="file-explorer"><i class="fa-solid fa-folder"></i><span>FileSaya</span></div>
+            <div class="start-menu-item" data-app="notepad"><i class="fa-solid fa-file-alt"></i><span>Notepad</span></div>
+            <div class="start-menu-item" data-app="word-editor"><i class="fa-solid fa-file-word"></i><span>Kynay Write</span></div>
+            <div class="start-menu-item" data-app="spreadsheet"><i class="fa-solid fa-file-excel"></i><span>Kynay Sheet</span></div>
+            <div class="start-menu-item" data-app="browser"><i class="fa-solid fa-globe"></i><span>Browser</span></div>
+            <div class="start-menu-item" data-app="terminal"><i class="fa-solid fa-terminal"></i><span>Terminal</span></div>
+            <div class="start-menu-item" data-app="calculator"><i class="fa-solid fa-calculator"></i><span>Kalkulator</span></div>
+            <div class="start-menu-item" data-app="music"><i class="fa-solid fa-music"></i><span>Musik</span></div>
+            <div class="start-menu-item" data-app="gallery"><i class="fa-solid fa-images"></i><span>Galeri</span></div>
+            <div class="start-menu-item" data-app="chatbot"><i class="fa-solid fa-comments"></i><span>Chatbot AI</span></div>
+            <div class="start-menu-item" data-app="task-manager"><i class="fa-solid fa-list-check"></i><span>Manajer Tugas</span></div>
+            <div class="start-menu-item" data-app="about"><i class="fa-solid fa-circle-info"></i><span>Tentang</span></div>
+        </div>
+    </div>
+    
+    <div id="control-center">
+        <div class="control-group">
+            <h4>Tampilan</h4>
+            <div class="control-buttons">
+                <button class="control-btn" id="theme-toggle-btn" title="Toggle Dark/Light Mode"><i class="fas fa-moon"></i></button>
+                <button class="control-btn" id="fullscreen-btn" title="Toggle Fullscreen"><i class="fas fa-expand"></i></button>
+            </div>
+        </div>
+        <div class="control-group">
+            <h4>Simulasi Sistem</h4>
+            <div class="control-slider"><i class="fas fa-volume-up"></i><input type="range" min="0" max="100" value="75" title="Volume (Simulasi)"></div>
+        </div>
+        <div class="control-group">
+             <div class="control-slider"><i class="fas fa-sun"></i><input type="range" min="0" max="100" value="80" title="Brightness (Simulasi)"></div>
+        </div>
+         <div class="control-group">
+            <h4>Wallpaper Animasi</h4>
+            <div class="control-buttons">
+                <button class="control-btn wallpaper-btn" data-theme="waves" title="Waves Theme"><i class="fas fa-water"></i></button>
+                <button class="control-btn wallpaper-btn" data-theme="net" title="Net Theme"><i class="fas fa-project-diagram"></i></button>
+                <button class="control-btn wallpaper-btn" data-theme="rings" title="Rings Theme"><i class="fas fa-ring"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <div id="notification-container"></div>
+
+    <template id="window-template">
+        <div class="window">
+            <div class="window-header">
+                <div class="window-controls">
+                    <div class="window-control" id="close-btn" title="Close"></div>
+                    <div class="window-control" id="minimize-btn" title="Minimize"></div>
+                    <div class="window-control" id="maximize-btn" title="Maximize"></div>
+                </div>
+                <span class="window-title"></span>
+            </div>
+            <div class="window-body"></div>
+        </div>
+    </template>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vanta@latest/dist/vanta.waves.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vanta@latest/dist/vanta.net.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vanta@latest/dist/vanta.rings.min.js"></script>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+
+        const ANIMATION_DURATION = 250; 
+
+        // --- BOOT & NOTIFICATION SYSTEM ---
+        window.onload = () => {
+            setTimeout(() => {
+                const bootScreen = document.getElementById('boot-screen');
+                bootScreen.style.opacity = '0';
+                setTimeout(() => bootScreen.style.visibility = 'hidden', 1500);
+                showNotification('Selamat datang di Kynay OS!', 'info');
+            }, 3000); 
+        };
+        function showNotification(message, type = 'info') {
+            const container = document.getElementById('notification-container');
+            const notif = document.createElement('div');
+            notif.className = `notification notification-${type}`;
+            notif.innerHTML = `<p>${message}</p>`;
+            container.appendChild(notif);
+            setTimeout(() => { notif.style.opacity = '0'; setTimeout(() => notif.remove(), 500); }, 5000);
+        }
+        
+        // --- WALLPAPER MANAGEMENT ---
+        let vantaEffect = null;
+        const wallpaperThemes = {
+            waves: { effect: 'WAVES', options: { el: "#desktop", mouseControls: true, touchControls: true, gyroControls: false, minHeight: 200.00, minWidth: 200.00, scale: 1.00, scaleMobile: 1.00, color: 0x1a2c4a, shininess: 40.00, waveHeight: 15.00, waveSpeed: 0.70, zoom: 0.8 } },
+            net: { effect: 'NET', options: { el: "#desktop", mouseControls: true, touchControls: true, gyroControls: false, minHeight: 200.00, minWidth: 200.00, scale: 1.00, scaleMobile: 1.00, color: 0x3b88c3, backgroundColor: 0x0d1117, points: 12.00, maxDistance: 25.00, spacing: 18.00 } },
+            rings: { effect: 'RINGS', options: { el: "#desktop", mouseControls: true, touchControls: true, gyroControls: false, minHeight: 200.00, minWidth: 200.00, scale: 1.00, scaleMobile: 1.00, color: 0x4a90e2, backgroundColor: 0x0d1117, strength: 1.20 } }
+        };
+        function setWallpaper(themeName) {
+            if (vantaEffect) vantaEffect.destroy();
+            const theme = wallpaperThemes[themeName];
+            vantaEffect = VANTA[theme.effect](theme.options);
+            localStorage.setItem('kynay-os-wallpaper', themeName);
+        }
+
+        // --- CORE UI ELEMENTS ---
+        const desktop = document.getElementById('desktop');
+        const startButton = document.getElementById('start-button');
+        const startMenu = document.getElementById('start-menu');
+        const controlCenterBtn = document.getElementById('control-center-btn');
+        const controlCenter = document.getElementById('control-center');
+        const clockElement = document.getElementById('clock');
+        const taskbarAppsContainer = document.getElementById('taskbar-apps');
+        const shutdownBtn = document.getElementById('shutdown-btn');
+        
+        // --- CLOCK ---
+        function updateClock() {
+            const now = new Date();
+            const time = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+            const date = now.toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric', month: 'short' });
+            clockElement.innerHTML = `${time} <br> ${date}`;
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // --- PANEL TOGGLES (START MENU & CONTROL CENTER) ---
+        function togglePanel(panel) {
+            const isVisible = panel.classList.contains('show');
+            document.querySelectorAll('.panel').forEach(p => p.classList.remove('show'));
+            if (!isVisible) panel.classList.add('show');
+        }
+        startButton.addEventListener('click', (e) => { e.stopPropagation(); togglePanel(startMenu); });
+        controlCenterBtn.addEventListener('click', (e) => { e.stopPropagation(); togglePanel(controlCenter); });
+        document.addEventListener('click', (e) => {
+            if (!startMenu.contains(e.target) && !startButton.contains(e.target)) startMenu.classList.remove('show');
+            if (!controlCenter.contains(e.target) && !controlCenterBtn.contains(e.target)) controlCenter.classList.remove('show');
+        });
+        startMenu.classList.add('panel');
+        controlCenter.classList.add('panel');
+
+        // --- WINDOW MANAGEMENT ---
+        let highestZIndex = 100;
+        const openWindows = new Map();
+
+        function focusWindow(windowEl) {
+            highestZIndex++;
+            windowEl.style.zIndex = highestZIndex;
+            document.querySelectorAll('.taskbar-app-icon').forEach(icon => icon.classList.remove('active'));
+            const appID = windowEl.dataset.appId;
+            const taskbarIcon = taskbarAppsContainer.querySelector(`[data-app-id="${appID}"]`);
+            if (taskbarIcon) taskbarIcon.classList.add('active');
+        }
+
+        function makeWindowDraggable(windowEl) {
+            const header = windowEl.querySelector('.window-header');
+            let isDragging = false, offsetX, offsetY;
+            header.addEventListener('mousedown', (e) => {
+                if (e.target.classList.contains('window-control')) return;
+                isDragging = true;
+                offsetX = e.clientX - windowEl.offsetLeft;
+                offsetY = e.clientY - windowEl.offsetTop;
+                focusWindow(windowEl);
+                document.body.style.cursor = 'grabbing';
+                e.preventDefault();
+            });
+            document.addEventListener('mousemove', (e) => {
+                if (isDragging) {
+                    const taskbarHeight = document.getElementById('taskbar').offsetHeight;
+                    let newX = e.clientX - offsetX;
+                    let newY = e.clientY - offsetY;
+                    newX = Math.max(0, Math.min(newX, window.innerWidth - windowEl.offsetWidth));
+                    newY = Math.max(0, Math.min(newY, window.innerHeight - windowEl.offsetHeight - taskbarHeight - 20));
+                    windowEl.style.left = `${newX}px`;
+                    windowEl.style.top = `${newY}px`;
+                }
+            });
+            document.addEventListener('mouseup', () => { isDragging = false; document.body.style.cursor = 'default'; });
+        }
+
+        // --- APP LAUNCHER ---
+        document.querySelectorAll('.desktop-icon, .start-menu-item').forEach(launcher => {
+            const eventType = launcher.classList.contains('desktop-icon') ? 'dblclick' : 'click';
+            launcher.addEventListener(eventType, () => {
+                createWindow(launcher.dataset.app);
+                startMenu.classList.remove('show');
+            });
+        });
+        
+        // --- WINDOW & APP CREATION ---
+        function createWindow(appId, initialContent = '') {
+            if (openWindows.has(appId)) {
+                const existingWindow = openWindows.get(appId).element;
+                if (existingWindow.style.display === 'none') toggleMinimize(existingWindow, appId);
+                focusWindow(existingWindow);
+                return existingWindow;
+            }
+            const template = document.getElementById('window-template');
+            const newWindow = template.content.cloneNode(true).firstElementChild;
+            newWindow.dataset.appId = appId;
+            const appConfig = getAppConfig(appId);
+            newWindow.querySelector('.window-title').textContent = appConfig.title;
+            const windowBody = newWindow.querySelector('.window-body');
+            windowBody.innerHTML = initialContent || appConfig.content;
+            windowBody.classList.add('app-content', appId);
+            newWindow.style.width = appConfig.width || '550px';
+            newWindow.style.height = appConfig.height || '450px';
+            newWindow.style.top = `${Math.random() * 50 + 50}px`;
+            newWindow.style.left = `${Math.random() * 150 + 100}px`;
+            desktop.appendChild(newWindow);
+            makeWindowDraggable(newWindow);
+            newWindow.querySelector('#close-btn').addEventListener('click', () => closeWindow(newWindow, appId));
+            newWindow.querySelector('#minimize-btn').addEventListener('click', () => toggleMinimize(newWindow, appId));
+            newWindow.querySelector('#maximize-btn').addEventListener('click', () => toggleMaximize(newWindow));
+            openWindows.set(appId, { element: newWindow, maximized: false });
+            createTaskbarIcon(appId, appConfig.icon, newWindow);
+            focusWindow(newWindow);
+            if (appId === 'browser') initBrowser(newWindow);
+            if (appId === 'terminal') initTerminal(newWindow);
+            if (appId === 'calculator') initCalculator(newWindow);
+            if (appId === 'music') initMusicPlayer(newWindow);
+            if (appId === 'chatbot') initChatbot(newWindow);
+            if (appId === 'word-editor') initWordEditor(newWindow);
+            if (appId === 'spreadsheet') initSpreadsheet(newWindow);
+            if (appId === 'file-explorer') initFileExplorer(newWindow);
+            if (appId === 'task-manager') initTaskManager(newWindow);
+            newWindow.addEventListener('mousedown', () => focusWindow(newWindow));
+            return newWindow;
+        }
+
+        // --- APP CONFIGURATION (with full logic) ---
+        function getAppConfig(appId) {
+            const configs = {
+                notepad: { title: 'Notepad', icon: 'fa-file-alt', width: '450px', height: '500px', content: `<textarea placeholder="Tulis sesuatu di sini..."></textarea>` },
+                'word-editor': { title: 'Kynay Write', icon: 'fa-file-word', width: '650px', height: '550px', content: `<div class="word-editor-toolbar"><button data-command="bold"><i class="fas fa-bold"></i></button><button data-command="italic"><i class="fas fa-italic"></i></button><button data-command="underline"><i class="fas fa-underline"></i></button><button id="save-txt-btn"><i class="fas fa-save"></i> .txt</button><button id="save-html-btn"><i class="fas fa-save"></i> .html</button></div><div class="word-editor-content" contenteditable="true" spellcheck="false"><p>Mulai menulis...</p></div>` },
+                spreadsheet: { title: 'Kynay Sheet', icon: 'fa-file-excel', width: '700px', height: '500px', content: `<div class="spreadsheet-controls"><button id="export-csv-btn"><i class="fas fa-file-csv"></i> Ekspor CSV</button></div><div class="spreadsheet-container"><table class="spreadsheet-table"></table></div>` },
+                'file-explorer': { title: 'FileSaya', icon: 'fa-folder', width: '600px', height: '500px', content: `<div class="explorer-path"><i class="fas fa-hdd"></i><span id="current-path">/</span></div><div class="file-explorer-grid"></div>` },
+                'task-manager': { title: 'Manajer Tugas', icon: 'fa-list-check', width: '450px', height: '400px', content: `<h3>Aplikasi Berjalan</h3><ul class="task-list"></ul>` },
+                browser: { title: 'Web Browser', icon: 'fa-globe', width: '800px', height: '600px', content: `<div class="browser-nav"><input type="text" value="https://www.google.com/webhp?igu=1" placeholder="Masukkan URL"><button>Go</button></div><iframe class="browser-content" sandbox="allow-forms allow-modals allow-pointer-lock allow-popups allow-same-origin allow-scripts" src="https://www.google.com/webhp?igu=1&igu=1"></iframe>` },
+                terminal: { title: 'Terminal', icon: 'fa-terminal', width: '600px', height: '400px', content: `<div class="terminal-output"><div>Welcome to Kynay OS Terminal! Ketik 'help' untuk bantuan.</div><br></div><div class="terminal-input-line"><span class="terminal-prompt">KynayOS> </span><input type="text" class="terminal-input" autofocus></div>` },
+                about: { title: 'Tentang Kynay OS', icon: 'fa-circle-info', width: '450px', height: '450px', content: `<div class="about"><i class="fa-solid fa-bolt" style="font-size: 64px; margin-bottom: 20px; color: var(--accent-color-primary);"></i><h3>Kynay OS</h3><p>Versi Final "Aether"</p><p>Dibuat oleh: <span style="font-weight: bold; color: var(--accent-color-primary);">Farhan Kertadiwangsa</span></p><p style="margin-top: 15px;">&copy; 2025</p></div>` },
+                calculator: { title: 'Kalkulator', icon: 'fa-calculator', width: '320px', height: '450px', content: `<div class="calc-display">0</div><div class="calc-buttons"><button class="calc-button operator">C</button><button class="calc-button operator">()</button><button class="calc-button operator">%</button><button class="calc-button operator">/</button><button class="calc-button">7</button><button class="calc-button">8</button><button class="calc-button">9</button><button class="calc-button operator">*</button><button class="calc-button">4</button><button class="calc-button">5</button><button class="calc-button">6</button><button class="calc-button operator">-</button><button class="calc-button">1</button><button class="calc-button">2</button><button class="calc-button">3</button><button class="calc-button operator">+</button><button class="calc-button" style="grid-column: span 2;">0</button><button class="calc-button">.</button><button class="calc-button operator">=</button></div>` },
+                music: { title: 'Pemutar Musik', icon: 'fa-music', width: '300px', height: '350px', content: `<div class="music-info" style="text-align:center; padding: 20px;"><h4>Stargazing</h4><p>Anonymous Artist</p><button id="play-pause-btn" style="font-size:2em; background:none; border:none; color: var(--font-color); cursor:pointer; margin-top:15px;"><i class="fas fa-play"></i></button></div><audio id="audio-player" src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" loop></audio>`},
+                gallery: { title: 'Galeri Gambar', icon: 'fa-images', width: '550px', height: '450px', content: `<p style="padding:20px; text-align:center;">Buka file gambar dari FileSaya untuk melihatnya di sini.</p>`},
+                chatbot: { title: 'Chatbot AI', icon: 'fa-comments', width: '400px', height: '500px', content: `<div class="chatbot-messages"></div><div class="chatbot-input-area"><input type="text" class="chatbot-input" placeholder="Ketik pesan..."><button class="chatbot-send-btn"><i class="fas fa-paper-plane"></i></button></div>`},
+            };
+            return configs[appId];
+        }
+
+        function closeWindow(windowEl, appId) {
+            windowEl.classList.add('closing');
+            setTimeout(() => {
+                windowEl.dispatchEvent(new CustomEvent('removed')); // For task manager observer
+                windowEl.remove();
+                openWindows.delete(appId);
+                removeTaskbarIcon(appId);
+            }, ANIMATION_DURATION);
+        }
+        
+        function toggleMinimize(windowEl, appId) {
+            const taskbarIcon = taskbarAppsContainer.querySelector(`[data-app-id="${appId}"]`);
+            if (windowEl.style.display === 'none') {
+                windowEl.style.display = 'flex';
+                focusWindow(windowEl);
+            } else {
+                windowEl.style.display = 'none';
+                taskbarIcon.classList.remove('active');
+            }
+        }
+
+        let lastPositions = {};
+        function toggleMaximize(windowEl) {
+            const appId = windowEl.dataset.appId;
+            const state = openWindows.get(appId);
+            const taskbarHeight = document.getElementById('taskbar').offsetHeight;
+            if (state.maximized) {
+                Object.assign(windowEl.style, lastPositions[appId]);
+                state.maximized = false;
+            } else {
+                lastPositions[appId] = { top: windowEl.style.top, left: windowEl.style.left, width: windowEl.style.width, height: windowEl.style.height };
+                Object.assign(windowEl.style, { top: '0', left: '0', width: '100vw', height: `calc(100vh - ${taskbarHeight}px - 10px)` }); // 10px buffer from taskbar
+                state.maximized = true;
+            }
+        }
+
+        function createTaskbarIcon(appId, iconClass, windowEl) {
+            const icon = document.createElement('i');
+            icon.className = `fas ${iconClass} taskbar-app-icon`;
+            icon.dataset.appId = appId;
+            icon.title = getAppConfig(appId).title;
+            icon.addEventListener('click', () => {
+                const isMinimized = windowEl.style.display === 'none';
+                if (!isMinimized && icon.classList.contains('active')) toggleMinimize(windowEl, appId);
+                else {
+                    if (isMinimized) toggleMinimize(windowEl, appId);
+                    focusWindow(windowEl);
+                }
+            });
+            taskbarAppsContainer.appendChild(icon);
+        }
+
+        function removeTaskbarIcon(appId) {
+            const icon = taskbarAppsContainer.querySelector(`[data-app-id="${appId}"]`);
+            if (icon) icon.remove();
+        }
+        
+        // --- APP-SPECIFIC LOGIC (FULL IMPLEMENTATION) ---
+        function initBrowser(w) { const i=w.querySelector('input'),b=w.querySelector('button'),f=w.querySelector('iframe'); function n(){let u=i.value.trim();if(!u.startsWith('http'))u='https://'+u;f.src=u;} b.addEventListener('click',n); i.addEventListener('keydown',(e)=>{if(e.key==='Enter')n();}); }
+        function initTerminal(w) {
+            const o=w.querySelector('.terminal-output'),i=w.querySelector('.terminal-input');
+            i.addEventListener('keydown',(e)=>{if(e.key==='Enter'){const c=i.value.trim(),l=document.createElement('div');l.innerHTML=`<span class="terminal-prompt">KynayOS> </span>${c}`;o.appendChild(l);handleTerminalCommand(c,o);i.value='';o.scrollTop=o.scrollHeight;}}); i.focus();
+        }
+        function handleTerminalCommand(command, out) {
+            const args=command.split(' '),cmd=args[0].toLowerCase();let r='';
+            switch(cmd){
+                case 'help':r=`Perintah: help, date, about, echo, calc, clear, apps`;break;
+                case 'date':r=new Date().toLocaleString('id-ID');break;
+                case 'about':r='Kynay OS Final "Aether" - by Farhan Kertadiwangsa';break;
+                case 'echo':r=args.slice(1).join(' ');break;
+                case 'calc':try{r=`Hasil: ${eval(args.slice(1).join('').replace(/[^-()\d/*+.]/g,''))}`}catch(e){r=`Ekspresi tidak valid`};break;
+                case 'clear':out.innerHTML='';return;
+                case 'apps':r=openWindows.size===0?"Tidak ada aplikasi berjalan.":"Aplikasi berjalan:<br>"+[...openWindows.keys()].join('<br>');break;
+                default:r=`Perintah tidak ditemukan: '${cmd}'`;
+            }
+            const resEl=document.createElement('div');resEl.innerHTML=r;out.appendChild(resEl);out.appendChild(document.createElement('br'));
+        }
+        function initCalculator(w) {
+            const d=w.querySelector('.calc-display'),b=w.querySelector('.calc-buttons');let c='0',o=null,p=null,rs=false;
+            b.addEventListener('click',e=>{if(!e.target.matches('button'))return;const k=e.target.textContent;if(!isNaN(k)||k==='.'){if(rs){c=k==='.'?'0.':k;rs=false;}else{if(c==='0'&&k!=='.')c=k;else if(k==='.'&&c.includes('.'))return;else c+=k;}}else if(k==='C'){c='0';o=null;p=null;rs=false;}else if(k==='='){if(o&&p!==null){try{c=String(eval(`${p} ${o} ${c}`))}catch{c='Error'}o=null;p=null;rs=true;}}else{if(p!==null&&o&&!rs){try{c=String(eval(`${p} ${o} ${c}`))}catch{c='Error'}d.textContent=c;}o=k;p=c;rs=true;}d.textContent=c;});
+        }
+        function initMusicPlayer(w){const a=w.querySelector('#audio-player'),p=w.querySelector('#play-pause-btn'),i=p.querySelector('i');p.addEventListener('click',()=>{if(a.paused){a.play();i.className='fas fa-pause'}else{a.pause();i.className='fas fa-play'}});}
+        function initChatbot(w){const m=w.querySelector('.chatbot-messages'),i=w.querySelector('.chatbot-input'),s=w.querySelector('.chatbot-send-btn');function a(t,d){const e=document.createElement('div');e.className=`chatbot-message ${d}`;e.textContent=t;m.appendChild(e);m.scrollTop=m.scrollHeight}async function n(){const t=i.value.trim();if(t==='')return;a(t,'user');i.value='';try{const e=await fetch('http://127.0.0.1:5000/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:t})}),o=await e.json();a(o.response,'ai')}catch(e){a('Maaf, saya tidak dapat terhubung ke AI saat ini.','ai')}}s.addEventListener('click',n);i.addEventListener('keydown',e=>{if(e.key==='Enter')n()});a('Halo! Ada yang bisa saya bantu?','ai');}
+        function initWordEditor(w){const c=w.querySelector('.word-editor-content'),t=w.querySelector('.word-editor-toolbar'),st=w.querySelector('#save-txt-btn'),sh=w.querySelector('#save-html-btn');t.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const o=b.dataset.command,v=b.dataset.value;if(o)document.execCommand(o,false,v);c.focus();});st.addEventListener('click',()=>{downloadBlob(c.innerText,'dokumen.txt','text/plain')});sh.addEventListener('click',()=>{downloadBlob(`<!DOCTYPE html><html><body>${c.innerHTML}</body></html>`,'dokumen.html','text/html')});}
+        function initSpreadsheet(w){const t=w.querySelector('.spreadsheet-table'),e=w.querySelector('#export-csv-btn'),R=20,C=15;function cs(){t.innerHTML='';const h=t.createTHead().insertRow();h.insertCell();for(let j=0;j<C;j++)h.insertCell().textContent=String.fromCharCode(65+j);const b=t.createTBody();for(let i=0;i<R;i++){const r=b.insertRow();r.insertCell().textContent=i+1;for(let j=0;j<C;j++){const c=r.insertCell();c.contentEditable=true;}}}e.addEventListener('click',()=>{let csv='';for(let i=0;i<t.rows.length;i++){let rowData=[];for(let j=0;j<t.rows[i].cells.length;j++)rowData.push(`"${t.rows[i].cells[j].textContent}"`);csv+=rowData.join(',')+"\n";}downloadBlob(csv,'spreadsheet.csv','text/csv');});cs();}
+        function initFileExplorer(w){
+            const g=w.querySelector('.file-explorer-grid'),p=w.querySelector('#current-path');
+            const fs={'root':[{name:'Dokumen',type:'folder',content:[{name:'Laporan.txt',type:'file',app:'notepad',content:'Ini contoh dokumen.'},{name:'Presentasi.html',type:'file',app:'word-editor',content:'<h1>Judul</h1><p>Isi.</p>'}]},{name:'Musik',type:'folder',content:[{name:'Song1.mp3',type:'file',app:'music',content:'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3'}]},{name:'Gambar',type:'folder',content:[{name:'Pemandangan.jpg',type:'file',app:'gallery',content:'https://picsum.photos/800/600?random=1'}]},{name:'Readme.txt',type:'file',app:'notepad',content:'Selamat datang di FileSaya!'}]};
+            let path=[],dir=fs.root;
+            function render(){g.innerHTML='';p.textContent='/'+path.join('/');if(path.length>0){const b=document.createElement('div');b.className='explorer-item';b.innerHTML=`<i class="fas fa-arrow-left" style="color:#ccc;"></i><span>Kembali</span>`;b.addEventListener('dblclick',()=>{path.pop();navigateToPath(path)});g.appendChild(b);}dir.forEach(item=>{const e=document.createElement('div');e.className='explorer-item';let iC,iS;if(item.type==='folder'){iC='fa-folder';iS='color:#f7b529;'}else{iC='fa-file';iS=''}e.innerHTML=`<i class="fas ${iC}" style="${iS}"></i><span>${item.name}</span>`;e.addEventListener('dblclick',()=>{if(item.type==='folder'){path.push(item.name);dir=item.content;render();}else if(item.app){let win;switch(item.app){case 'notepad':win=createWindow('notepad');win.querySelector('textarea').value=item.content;break;case 'word-editor':win=createWindow('word-editor');win.querySelector('.word-editor-content').innerHTML=item.content;break;case 'music':win=createWindow('music');win.querySelector('#audio-player').src=item.content;win.querySelector('.music-info h4').textContent=item.name;win.querySelector('#play-pause-btn').click();break;case 'gallery':win=createWindow('gallery');win.querySelector('.window-body').innerHTML=`<img src="${item.content}" style="width:100%;height:100%;object-fit:contain;">`;break;default:createWindow(item.app);}}});g.appendChild(e);});}
+            function navigateToPath(pathArr){let t=fs.root;for(let i=0;i<pathArr.length;i++){const f=t.find(item=>item.name===pathArr[i]&&item.type==='folder');if(f)t=f.content;else{path=[];t=fs.root;break;}}dir=t;render();}
+            render();
+        }
+        function initTaskManager(windowEl) {
+            const taskList = windowEl.querySelector('#task-list');
+            function updateList() {
+                taskList.innerHTML = '';
+                if(openWindows.size === 0) { taskList.innerHTML = '<li>Tidak ada aplikasi berjalan.</li>'; return; }
+                openWindows.forEach((info, id) => {
+                    const li = document.createElement('li');
+                    li.innerHTML = `<span>${info.element.querySelector('.window-title').textContent}</span><button data-app-id="${id}">Akhiri</button>`;
+                    li.querySelector('button').addEventListener('click', (e) => closeWindow(openWindows.get(e.target.dataset.appId).element, e.target.dataset.appId));
+                    taskList.appendChild(li);
+                });
+            }
+            const observer = new MutationObserver(updateList);
+            observer.observe(taskbarAppsContainer, { childList: true });
+            windowEl.addEventListener('removed', () => observer.disconnect());
+            updateList();
+        }
+        function downloadBlob(c,f,t){const b=new Blob([c],{type:t}),u=URL.createObjectURL(b),a=document.createElement('a');a.href=u;a.download=f;document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(u);}
+
+        // --- SYSTEM CONTROLS (in Control Center) & PERSISTENCE ---
+        const themeToggleBtn = document.getElementById('theme-toggle-btn');
+        const fullscreenBtn = document.getElementById('fullscreen-btn');
+        themeToggleBtn.addEventListener('click', ()=>{document.body.classList.toggle('light-mode');const i=document.body.classList.contains('light-mode');themeToggleBtn.innerHTML=i?'<i class="fas fa-sun"></i>':'<i class="fas fa-moon"></i>';localStorage.setItem('kynay-os-theme',i?'light':'dark');});
+        fullscreenBtn.addEventListener('click', ()=>{if(!document.fullscreenElement)document.documentElement.requestFullscreen();else document.exitFullscreen();});
+        document.querySelectorAll('.wallpaper-btn').forEach(btn => btn.addEventListener('click', ()=>setWallpaper(btn.dataset.theme)));
+        shutdownBtn.addEventListener('click',()=>{if(confirm('Anda yakin ingin mematikan Kynay OS?')){const s=document.createElement('div');Object.assign(s.style,{position:'fixed',top:0,left:0,width:'100%',height:'100%',background:'#0d1117',zIndex:10001,display:'flex',justifyContent:'center',alignItems:'center',color:'white',opacity:0,transition:'opacity 1s ease'});s.innerHTML=`<h1>Mematikan...</h1>`;document.body.appendChild(s);setTimeout(()=>s.style.opacity='1',10);setTimeout(()=>document.body.innerHTML='<div style="background:#000;color:#fff;width:100%;height:100%;display:flex;justify-content:center;align-items:center;"><h1>Sistem telah dimatikan.</h1></div>',2500);}});
+        
+        const savedTheme=localStorage.getItem('kynay-os-theme');if(savedTheme==='light'){document.body.classList.add('light-mode');themeToggleBtn.innerHTML='<i class="fas fa-sun"></i>';}
+        setWallpaper(localStorage.getItem('kynay-os-wallpaper')||'waves');
+    });
+    </script>
+</body>
+</html>
